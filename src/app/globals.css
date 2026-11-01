@@ -1,26 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --font-sans: 'Josefin Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --background: #fbfcfd;
+    --foreground: #0c0b0b;
+    --card: #ffffff;
+    --card-foreground: #0c0b0b;
+    --popover: #ffffff;
+    --popover-foreground: #0c0b0b;
+    --primary: #15a1bf;
+    --primary-foreground: #ffffff;
+    --secondary: #edfcff;
+    --secondary-foreground: #15a1bf;
+    --muted: #f4f5f6;
+    --muted-foreground: #6c696d;
+    --accent: #fe9a00;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e6e8eb;
+    --input: #e6e8eb;
+    --ring: #15a1bf;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: #0c0b0b;
+    --foreground: #ffffff;
+    --card: #141416;
+    --card-foreground: #ffffff;
+    --popover: #18181b;
+    --popover-foreground: #ffffff;
+    --primary: #15a1bf;
+    --primary-foreground: #ffffff;
+    --secondary: #12282e;
+    --secondary-foreground: #8de5f5;
+    --muted: #1c1c1f;
+    --muted-foreground: #b6b6b6;
+    --accent: #fe9a00;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #26262a;
+    --input: #26262a;
+    --ring: #15a1bf;
   }
 }
 
+/* Base Body Styling */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  letter-spacing: -0.012em;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Completely obliterate browser default native scrollbars across all elements & viewports */
+*,
+*::before,
+*::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  display: none !important;
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  display: none !important;
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* ColorOS 17 Living Flow & Liquid Acrylic Utility Classes */
+.glass-panel, .liquid-acrylic {
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.05), inset 0 1px 2px 0 rgba(255, 255, 255, 0.95);
+}
+
+.glass-pill, .acrylic-pill {
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.12), inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
+}
+
+.glass-card, .acrylic-card {
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.glass-card:hover, .acrylic-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(21, 161, 191, 0.5);
+  box-shadow: 0 25px 50px -10px rgba(21, 161, 191, 0.16), inset 0 1px 2px 0 rgba(255, 255, 255, 0.95);
+}
+
+.living-glow {
+  box-shadow: 0 0 25px rgba(21, 161, 191, 0.25);
+}
+
+/* Sonner Toast & Close Button Custom Styling - inside toast on the right side */
+[data-sonner-toaster] [data-close-button="true"] {
+  left: auto !important;
+  right: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  position: absolute !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #6c696d !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 9999px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  z-index: 50 !important;
+}
+
+[data-sonner-toaster] [data-close-button="true"]:hover {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  transform: translateY(-50%) scale(1.1) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  padding-right: 44px !important;
+  position: relative !important;
+}
+
+.dark [data-sonner-toaster] [data-close-button="true"] {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #b6b6b6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark [data-sonner-toaster] [data-close-button="true"]:hover {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
 }
