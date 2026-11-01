@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DataService } from "@/lib/data-service";
 
-export async function GET() {
-  const bookings = DataService.getBookings();
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
+  const bookings = DataService.getBookings(userId || undefined);
   return NextResponse.json({ bookings });
 }
 
@@ -15,9 +17,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const user = DataService.getUser();
+    const targetUserId = body.userId || DataService.getUser().id;
     const newBooking = DataService.addBooking({
-      userId: user.id,
+      userId: targetUserId,
       packageId: body.packageId,
       packageName: body.packageName,
       packageImage: body.packageImage || "/images/bali.webp",
@@ -29,14 +31,6 @@ export async function POST(req: NextRequest) {
       guests: Number(body.guests) || 1,
       status: "Confirmed",
     });
-
-    // Update user stats
-    user.stats = {
-      ...user.stats!,
-      totalBookings: (user.stats?.totalBookings || 0) + 1,
-      totalSpent: (user.stats?.totalSpent || 0) + (Number(body.price) || 1299),
-      upcomingTrips: (user.stats?.upcomingTrips || 0) + 1,
-    };
 
     return NextResponse.json({ success: true, booking: newBooking }, { status: 201 });
   } catch {

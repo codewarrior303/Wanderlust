@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useAuth } from "@/contexts/auth-context";
+import Link from "next/link";
+import { useAuth, checkIsAdmin } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Lock, ShieldAlert } from "lucide-react";
 
@@ -52,7 +53,7 @@ export function RouteGuard({ children, requireAdmin = false }: RouteGuardProps) 
     );
   }
 
-  if (requireAdmin && user.role !== "admin") {
+  if (requireAdmin && !checkIsAdmin(user)) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-[#FE9A00] mb-4 shadow-sm">
@@ -62,17 +63,13 @@ export function RouteGuard({ children, requireAdmin = false }: RouteGuardProps) 
           Admin Access Required
         </h2>
         <p className="max-w-md text-sm text-[#6C696D] dark:text-[#B6B6B6] mb-6">
-          You are currently signed in as a regular user ({user.email}). Admin privileges are required to access travel package management.
+          Access to travel package management is restricted to the verified administrator account.
         </p>
-        <Button
-          onClick={() => {
-            user.role = "admin";
-            window.location.reload();
-          }}
-          className="h-11 px-6 font-semibold bg-[#15A1BF]"
-        >
-          Switch to Admin Role
-        </Button>
+        <Link href="/destinations">
+          <Button className="h-11 px-6 font-semibold bg-[#15A1BF] hover:bg-[#11849d]">
+            Return to Destinations
+          </Button>
+        </Link>
       </div>
     );
   }

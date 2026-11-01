@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Booking } from "@/lib/types";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 
 export default function MyBookingsPage() {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
@@ -36,20 +38,29 @@ export default function MyBookingsPage() {
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
 
-  const fetchBookings = () => {
-    fetch("/api/bookings")
+  const fetchBookings = useCallback(() => {
+    if (!user) {
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetch(`/api/bookings?userId=${encodeURIComponent(user.id)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.bookings) {
           setBookings(data.bookings);
         }
       })
+      .catch(() => {
+        setBookings([]);
+      })
       .finally(() => setLoading(false));
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [fetchBookings]);
 
   const handleCancel = async () => {
     if (!cancelTarget) return;

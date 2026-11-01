@@ -53,10 +53,11 @@ export default function RootLayout({
               <CustomScrollbar />
               <Toaster
                 position="top-right"
+                visibleToasts={1}
+                duration={2500}
                 richColors
                 closeButton
                 toastOptions={{
-                  duration: 4000,
                   className: "font-sans text-xs rounded-2xl shadow-xl backdrop-blur-xl",
                 }}
               />

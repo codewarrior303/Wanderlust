@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,10 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/auth-context";
-import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
+import { Mail, Lock, User as UserIcon, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleIcon } from "@/components/ui/google-icon";
 import { LegalModal } from "./legal-modal";
+import {
+  encryptCredential,
+  decryptCredential,
+  REMEMBER_ME_STORAGE_KEY,
+} from "@/lib/security";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -64,24 +69,52 @@ export function AuthModal() {
 
   const [resetSent, setResetSent] = useState(false);
   const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
 
   const {
     register: registerSignIn,
     handleSubmit: handleSignInSubmit,
+    watch: watchSignIn,
+    setValue: setValueSignIn,
     formState: { errors: signInErrors },
     reset: resetSignIn,
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      email: "sarah.mitchell@example.com",
-      password: "password123",
-      rememberMe: true,
+      email: "",
+      password: "",
+      rememberMe: false,
     },
   });
+
+  // Load remembered credentials if stored within 7 days
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(REMEMBER_ME_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.expiresAt && Date.now() < Number(parsed.expiresAt)) {
+          if (parsed.email) setValueSignIn("email", parsed.email);
+          if (parsed.password) {
+            decryptCredential(parsed.password).then((plain) => {
+              if (plain) setValueSignIn("password", plain);
+            });
+          }
+          setValueSignIn("rememberMe", true);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [setValueSignIn]);
 
   const {
     register: registerSignUp,
     handleSubmit: handleSignUpSubmit,
+    watch: watchSignUp,
+    setValue: setValueSignUp,
     formState: { errors: signUpErrors },
     reset: resetSignUp,
   } = useForm<SignUpFormValues>({
@@ -107,6 +140,23 @@ export function AuthModal() {
   const onSignIn = async (values: SignInFormValues) => {
     const success = await signIn(values.email, values.password);
     if (success) {
+      if (values.rememberMe) {
+        try {
+          const encrypted = await encryptCredential(values.password);
+          localStorage.setItem(
+            REMEMBER_ME_STORAGE_KEY,
+            JSON.stringify({
+              email: values.email,
+              password: encrypted,
+              expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+            })
+          );
+        } catch {
+          // ignore
+        }
+      } else {
+        localStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+      }
       resetSignIn();
     }
   };
@@ -171,11 +221,19 @@ export function AuthModal() {
                   <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-[#6C696D]" />
                   <Input
                     id="signin-password"
-                    type="password"
+                    type={showSignInPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     {...registerSignIn("password")}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignInPassword((p) => !p)}
+                    className="absolute right-3 top-3 p-0.5 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                    aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {signInErrors.password && (
                   <p className="mt-1 text-xs text-red-500">
@@ -186,7 +244,13 @@ export function AuthModal() {
 
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <Checkbox id="remember-me" {...registerSignIn("rememberMe")} />
+                  <Checkbox
+                    id="remember-me"
+                    checked={watchSignIn("rememberMe")}
+                    onCheckedChange={(checked) =>
+                      setValueSignIn("rememberMe", checked === true)
+                    }
+                  />
                   <label
                     htmlFor="remember-me"
                     className="text-xs sm:text-sm text-[#6C696D] dark:text-[#B6B6B6] cursor-pointer"
@@ -230,7 +294,10 @@ export function AuthModal() {
             <Button
               type="button"
               variant="outline"
-              onClick={signInWithGoogle}
+              onClick={() => {
+                setValueSignUp("terms", true, { shouldValidate: true });
+                signInWithGoogle();
+              }}
               className="w-full h-11 gap-2.5 font-semibold text-xs"
               disabled={isLoading}
             >
@@ -312,11 +379,19 @@ export function AuthModal() {
                   <Lock className="absolute left-3.5 top-3 h-4 w-4 text-[#6C696D]" />
                   <Input
                     id="signup-password"
-                    type="password"
+                    type={showSignUpPassword ? "text" : "password"}
                     placeholder="Create a password"
-                    className="pl-10 h-10 text-xs"
+                    className="pl-10 pr-10 h-10 text-xs"
                     {...registerSignUp("password")}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignUpPassword((p) => !p)}
+                    className="absolute right-3 top-2.5 p-0.5 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                    aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {signUpErrors.password && (
                   <p className="mt-0.5 text-xs text-red-500">
@@ -333,11 +408,19 @@ export function AuthModal() {
                   <Lock className="absolute left-3.5 top-3 h-4 w-4 text-[#6C696D]" />
                   <Input
                     id="signup-confirm-password"
-                    type="password"
+                    type={showSignUpConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
-                    className="pl-10 h-10 text-xs"
+                    className="pl-10 pr-10 h-10 text-xs"
                     {...registerSignUp("confirmPassword")}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignUpConfirmPassword((p) => !p)}
+                    className="absolute right-3 top-2.5 p-0.5 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                    aria-label={showSignUpConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showSignUpConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {signUpErrors.confirmPassword && (
                   <p className="mt-0.5 text-xs text-red-500">
@@ -347,7 +430,14 @@ export function AuthModal() {
               </div>
 
               <div className="flex items-start gap-2.5 pt-0.5 text-xs text-[#6C696D] dark:text-[#B6B6B6]">
-                <Checkbox id="signup-terms" {...registerSignUp("terms")} className="mt-0.5" />
+                <Checkbox
+                  id="signup-terms"
+                  checked={watchSignUp("terms")}
+                  onCheckedChange={(checked) =>
+                    setValueSignUp("terms", checked === true, { shouldValidate: true })
+                  }
+                  className="mt-0.5"
+                />
                 <label
                   htmlFor="signup-terms"
                   className="leading-snug select-none cursor-pointer"
@@ -411,7 +501,10 @@ export function AuthModal() {
             <Button
               type="button"
               variant="outline"
-              onClick={signInWithGoogle}
+              onClick={() => {
+                setValueSignUp("terms", true, { shouldValidate: true });
+                signInWithGoogle();
+              }}
               className="w-full h-11 gap-2.5 font-semibold text-xs"
               disabled={isLoading}
             >

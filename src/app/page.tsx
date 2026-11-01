@@ -8,7 +8,6 @@ import { TravelPackage } from "@/lib/types";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { BookTripModal } from "@/components/destinations/book-trip-modal";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   MapPin,
   Calendar,
@@ -17,10 +16,8 @@ import {
   ArrowLeft,
   Star,
   ShieldCheck,
-  MapPin as MapPinIcon,
   Headphones,
   Compass,
-  Camera,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -86,27 +83,32 @@ export default function HomePage() {
     setIsBookModalOpen(true);
   };
 
+  // Top 12 destinations for the featured slider
+  const topPackages = React.useMemo(() => {
+    return packages.slice(0, 12);
+  }, [packages]);
+
   const nextSlide = () => {
-    if (packages.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % packages.length);
+    if (topPackages.length === 0) return;
+    setCurrentIndex((prev) => (prev + 3) % topPackages.length);
   };
 
   const prevSlide = () => {
-    if (packages.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + packages.length) % packages.length);
+    if (topPackages.length === 0) return;
+    setCurrentIndex((prev) => (prev - 3 + topPackages.length) % topPackages.length);
   };
 
-  // Dynamically compute the 3 packages to display when sliding
+  // Dynamically compute the 3 packages to display when sliding (moves 3 at a time)
   const displayedPackages = React.useMemo(() => {
-    if (packages.length === 0) return [];
+    if (topPackages.length === 0) return [];
     const count = 3;
-    const start = currentIndex % packages.length;
+    const start = currentIndex % topPackages.length;
     const items: TravelPackage[] = [];
-    for (let i = 0; i < Math.min(count, packages.length); i++) {
-      items.push(packages[(start + i) % packages.length]);
+    for (let i = 0; i < Math.min(count, topPackages.length); i++) {
+      items.push(topPackages[(start + i) % topPackages.length]);
     }
     return items;
-  }, [packages, currentIndex]);
+  }, [topPackages, currentIndex]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -128,7 +130,7 @@ export default function HomePage() {
                   alt={bg.title}
                   fill
                   sizes="100vw"
-                  priority={idx <= 1}
+                  priority={idx === 0}
                   className={`object-cover object-center transition-transform duration-[9000ms] ease-out will-change-transform ${
                     isActive ? "scale-105" : "scale-100"
                   }`}
@@ -291,10 +293,15 @@ export default function HomePage() {
 
           {/* Cards Grid matching Penpot Frame 190 (Projects 628x576) with Dynamic Slider */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {displayedPackages.map((pkg) => (
+            {displayedPackages.map((pkg, idx) => (
               <div
                 key={pkg.id}
-                className="group flex flex-col rounded-3xl bg-white border border-[#E6E8EB] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest("button") || target.closest("a")) return;
+                  router.push(`/destinations/${pkg.id}`);
+                }}
+                className="group flex flex-col rounded-3xl bg-white border border-[#E6E8EB] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
               >
                 {/* Image Container with rounded-3xl & 4.5 golden star badge */}
                 <div className="relative aspect-[16/10] sm:h-[320px] w-full overflow-hidden bg-neutral-100">
@@ -364,7 +371,7 @@ export default function HomePage() {
           {/* Slider Controls matching Penpot 'Slider' (1280x60 at y:1620) */}
           <div className="mt-16 flex items-center justify-between gap-6 pt-6">
             <span className="text-2xl sm:text-3xl font-normal text-[#0C0B0B] dark:text-neutral-100 font-sans">
-              {packages.length > 0 ? `${currentIndex + 1}/${packages.length}` : "1/5"}
+              {topPackages.length > 0 ? `${currentIndex + 1}/${topPackages.length}` : "1/12"}
             </span>
 
             {/* Vector 11 divider line */}

@@ -172,7 +172,6 @@ body {
 
 [data-sonner-toaster] [data-sonner-toast] {
   padding-right: 44px !important;
-  position: relative !important;
 }
 
 .dark [data-sonner-toaster] [data-close-button="true"] {

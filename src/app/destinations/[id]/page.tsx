@@ -181,6 +181,7 @@ function DestinationDetailsContent() {
             fill
             sizes="(max-width: 1280px) 100vw, 1280px"
             priority
+            loading="eager"
             className="object-cover"
           />
         </div>

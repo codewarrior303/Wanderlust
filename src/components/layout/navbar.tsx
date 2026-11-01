@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth, getHighResAvatar, checkIsAdmin } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,12 +20,19 @@ export function Navbar() {
   const pathname = usePathname();
   const { user, isAuthenticated, signOut, openAuthModal } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAdmin = mounted && isAuthenticated && checkIsAdmin(user);
 
   const leftNavLinks = [
     { name: "Home", href: "/" },
     { name: "Destinations", href: "/destinations" },
     { name: "My Bookings", href: "/my-bookings" },
-    { name: "Admin", href: "/admin" },
+    ...(isAdmin ? [{ name: "Admin", href: "/admin" }] : []),
   ];
 
   const isActive = (href: string) => {
@@ -67,8 +74,8 @@ export function Navbar() {
         </div>
 
         {/* Right Section matching Penpot Contact Frame */}
-        <div className="hidden md:flex items-center justify-end gap-5 flex-1">
-          {isAuthenticated && user ? (
+        <div className="hidden md:flex items-center justify-end gap-3 flex-1">
+          {mounted && isAuthenticated && user ? (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
@@ -78,10 +85,11 @@ export function Navbar() {
                   <div className="relative h-9 w-9 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800 shadow-xs">
                     {user.avatar ? (
                       <Image
-                        src={user.avatar}
+                        src={getHighResAvatar(user.avatar)}
                         alt="User avatar"
                         fill
-                        sizes="36px"
+                        sizes="72px"
+                        unoptimized={true}
                         className="object-cover"
                       />
                     ) : (
@@ -98,10 +106,11 @@ export function Navbar() {
                   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-2 ring-[#15A1BF]/30 shadow-xs">
                     {user.avatar ? (
                       <Image
-                        src={user.avatar}
+                        src={getHighResAvatar(user.avatar)}
                         alt="User avatar"
                         fill
-                        sizes="44px"
+                        sizes="88px"
+                        unoptimized={true}
                         className="object-cover"
                       />
                     ) : (
@@ -132,12 +141,14 @@ export function Navbar() {
                     <span>My Bookings</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin" className="flex items-center gap-2.5">
-                    <Shield className="h-4 w-4 text-[#15A1BF]" />
-                    <span>Admin Panel</span>
-                  </Link>
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center gap-2.5">
+                      <Shield className="h-4 w-4 text-[#15A1BF]" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator className="bg-neutral-200/60 dark:bg-white/10" />
                 <DropdownMenuItem
                   onClick={() => signOut()}
@@ -168,7 +179,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile controls */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1.5">
           <Button
             variant="ghost"
             size="icon"
@@ -200,7 +211,7 @@ export function Navbar() {
             ))}
 
             <div className="pt-3 border-t border-neutral-200/60 dark:border-white/10 flex flex-col gap-2">
-              {isAuthenticated && user ? (
+              {mounted && isAuthenticated && user ? (
                 <>
                   <Link
                     href="/profile"
@@ -210,10 +221,11 @@ export function Navbar() {
                     <div className="relative h-8 w-8 rounded-full overflow-hidden ring-2 ring-[#15A1BF]/40">
                       {user.avatar ? (
                         <Image
-                          src={user.avatar}
+                          src={getHighResAvatar(user.avatar)}
                           alt="User avatar"
                           fill
-                          sizes="32px"
+                          sizes="64px"
+                          unoptimized={true}
                           className="object-cover"
                         />
                       ) : (

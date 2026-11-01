@@ -32,7 +32,7 @@ export default function DestinationsPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 9;
 
   // Booking Modal
   const [bookingPackage, setBookingPackage] = useState<TravelPackage | null>(null);
@@ -96,6 +96,27 @@ export default function DestinationsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const visiblePages = useMemo(() => {
+    const maxButtons = 5;
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - 2;
+    let end = currentPage + 2;
+    if (start < 1) {
+      start = 1;
+      end = 5;
+    } else if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - 4;
+    }
+    const list: number[] = [];
+    for (let p = start; p <= end; p++) {
+      list.push(p);
+    }
+    return list;
+  }, [currentPage, totalPages]);
 
   const handleBook = (pkg: TravelPackage) => {
     if (!isAuthenticated || !user) {
@@ -273,8 +294,7 @@ export default function DestinationsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {Array.from({ length: totalPages }).map((_, i) => {
-              const page = i + 1;
+            {visiblePages.map((page) => {
               const isCurrent = page === currentPage;
               return (
                 <Button
@@ -282,7 +302,7 @@ export default function DestinationsPage() {
                   variant={isCurrent ? "default" : "outline"}
                   onClick={() => setCurrentPage(page)}
                   className={`h-10 w-10 rounded-xl font-bold text-xs ${
-                    isCurrent ? "bg-[#15A1BF]" : ""
+                    isCurrent ? "bg-[#15A1BF] text-white" : ""
                   }`}
                 >
                   {page}

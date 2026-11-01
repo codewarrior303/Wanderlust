@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { GoogleIcon } from "@/components/ui/google-icon";
+import {
+  encryptCredential,
+  decryptCredential,
+  REMEMBER_ME_STORAGE_KEY,
+} from "@/lib/security";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,24 +30,67 @@ export default function SignInPage() {
   const router = useRouter();
   const { signIn, signInWithGoogle, isLoading } = useAuth();
   const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      email: "sarah.mitchell@example.com",
-      password: "password123",
-      rememberMe: true,
+      email: "",
+      password: "",
+      rememberMe: false,
     },
   });
+
+  // Load remembered credentials if saved within 7 days
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(REMEMBER_ME_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.expiresAt && Date.now() < Number(parsed.expiresAt)) {
+          if (parsed.email) setValue("email", parsed.email);
+          if (parsed.password) {
+            decryptCredential(parsed.password).then((plain) => {
+              if (plain) setValue("password", plain);
+            });
+          }
+          setValue("rememberMe", true);
+        } else {
+          localStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [setValue]);
 
   const onSubmit = async (values: SignInValues) => {
     setAuthError("");
     const success = await signIn(values.email, values.password);
     if (success) {
+      if (values.rememberMe) {
+        try {
+          const encryptedPassword = await encryptCredential(values.password);
+          localStorage.setItem(
+            REMEMBER_ME_STORAGE_KEY,
+            JSON.stringify({
+              email: values.email,
+              password: encryptedPassword,
+              expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+            })
+          );
+        } catch {
+          // ignore
+        }
+      } else {
+        localStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+      }
       router.push("/destinations");
     } else {
       setAuthError("Invalid email or password");
@@ -106,11 +153,19 @@ export default function SignInPage() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6C696D]" />
                 <Input
                   id="page-signin-pass"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="pl-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
+                  className="pl-11 pr-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
                   {...register("password")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
@@ -119,7 +174,13 @@ export default function SignInPage() {
 
             <div className="flex items-center justify-between text-xs pt-1">
               <div className="flex items-center gap-2">
-                <Checkbox id="page-remember" {...register("rememberMe")} />
+                <Checkbox
+                  id="page-remember"
+                  checked={watch("rememberMe")}
+                  onCheckedChange={(checked) =>
+                    setValue("rememberMe", checked === true)
+                  }
+                />
                 <label
                   htmlFor="page-remember"
                   className="text-xs text-[#6C696D] dark:text-[#B6B6B6] cursor-pointer"

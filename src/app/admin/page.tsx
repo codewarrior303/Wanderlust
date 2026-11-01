@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TravelPackage } from "@/lib/types";
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -29,10 +29,13 @@ import {
   Clock,
   Calendar,
   Loader2,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
+import { COUNTRIES } from "@/lib/countries";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const addPackageSchema = z.object({
   title: z.string().min(2, "Package title is required"),
@@ -47,6 +50,20 @@ const addPackageSchema = z.object({
 
 type AddPackageFormValues = z.infer<typeof addPackageSchema>;
 
+function AdminThumbnail({ src, alt }: { src: string; alt: string }) {
+  const [imgSrc, setImgSrc] = useState(src || "/images/bali.webp");
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      sizes="64px"
+      onError={() => setImgSrc("/images/bali.webp")}
+      className="object-cover"
+    />
+  );
+}
+
 export default function AdminPage() {
   const [packages, setPackages] = useState<TravelPackage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +74,37 @@ export default function AdminPage() {
   const [deletingPackage, setDeletingPackage] = useState<TravelPackage | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  // Pagination matching user requirement: 5 items per page & professional 5-button window
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.max(1, Math.ceil(packages.length / itemsPerPage));
+
+  const paginatedPackages = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return packages.slice(start, start + itemsPerPage);
+  }, [packages, currentPage]);
+
+  const visiblePages = useMemo(() => {
+    const maxButtons = 5;
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - 2;
+    let end = currentPage + 2;
+    if (start < 1) {
+      start = 1;
+      end = 5;
+    } else if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - 4;
+    }
+    const list: number[] = [];
+    for (let p = start; p <= end; p++) {
+      list.push(p);
+    }
+    return list;
+  }, [currentPage, totalPages]);
 
   const {
     register,
@@ -161,11 +209,23 @@ export default function AdminPage() {
                     <Label htmlFor="country" className="mb-2 block text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                       Country
                     </Label>
-                    <Input
-                      id="country"
-                      placeholder="Indonesia"
-                      className="h-12 bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm rounded-xl"
-                      {...register("country")}
+                    <Controller
+                      name="country"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger id="country" className="h-12 rounded-xl text-sm font-normal">
+                            <SelectValue placeholder="Select Country..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {COUNTRIES.map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
                     {errors.country && (
                       <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>
@@ -239,11 +299,17 @@ export default function AdminPage() {
                   <Label htmlFor="departureDate" className="mb-2 block text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                     Departure Date
                   </Label>
-                  <Input
-                    id="departureDate"
-                    placeholder="mm/dd/yyyy"
-                    className="h-12 bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm rounded-xl"
-                    {...register("departureDate")}
+                  <Controller
+                    name="departureDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="departureDate"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select departure date from calendar..."
+                      />
+                    )}
                   />
                   {errors.departureDate && (
                     <p className="mt-1 text-xs text-red-500">{errors.departureDate.message}</p>
@@ -348,7 +414,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#EEEEEE] dark:divide-[#26262A]">
-                    {packages.map((pkg) => (
+                    {paginatedPackages.map((pkg: TravelPackage) => (
                       <tr
                         key={pkg.id}
                         className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors"
@@ -356,12 +422,9 @@ export default function AdminPage() {
                         <td className="py-4">
                           <div className="flex items-center gap-3">
                             <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                              <Image
+                              <AdminThumbnail
                                 src={pkg.imageUrl}
                                 alt={pkg.title}
-                                fill
-                                sizes="64px"
-                                className="object-cover"
                               />
                             </div>
                             <div>
@@ -432,6 +495,51 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Pagination Controls matching 2nd pic with professional 5-page window */}
+            {!loading && totalPages > 1 && (
+              <div className="pt-6 border-t border-[#EEEEEE] dark:border-[#26262A] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-xs text-[#6C696D] dark:text-[#B6B6B6]">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, packages.length)} of {packages.length} packages
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="h-9 w-9 rounded-xl"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {visiblePages.map((page: number) => {
+                    const isCurrent = page === currentPage;
+                    return (
+                      <Button
+                        key={page}
+                        variant={isCurrent ? "default" : "outline"}
+                        onClick={() => setCurrentPage(page)}
+                        className={`h-9 w-9 rounded-xl font-bold text-xs ${
+                          isCurrent ? "bg-[#15A1BF] text-white" : ""
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="h-9 w-9 rounded-xl"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>

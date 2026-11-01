@@ -9,6 +9,8 @@ export interface UserProfile {
   location?: string;
   nationality?: string;
   memberSince?: string;
+  twoFactorEnabled?: boolean;
+  passwordLastChanged?: string;
   stats?: {
     totalBookings: number;
     countriesVisited: number;

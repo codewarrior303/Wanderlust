@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       isFeatured: body.isFeatured ?? true,
     });
     return NextResponse.json({ success: true, package: created }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to create package" }, { status: 500 });
   }
 }

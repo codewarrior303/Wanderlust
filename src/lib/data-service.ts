@@ -2,16 +2,22 @@ import { TravelPackage, Booking, UserProfile } from "./types";
 import { initialPackages, initialBookings, initialUserProfile } from "./store";
 
 declare global {
-  // eslint-disable-next-line no-var
   var __wanderlust_packages: TravelPackage[] | undefined;
-  // eslint-disable-next-line no-var
   var __wanderlust_bookings: Booking[] | undefined;
-  // eslint-disable-next-line no-var
   var __wanderlust_user: UserProfile | undefined;
 }
 
-if (!globalThis.__wanderlust_packages) {
+if (!globalThis.__wanderlust_packages || globalThis.__wanderlust_packages.length < initialPackages.length) {
   globalThis.__wanderlust_packages = [...initialPackages];
+} else {
+  // Sync latest image assets
+  for (const initPkg of initialPackages) {
+    const existing = globalThis.__wanderlust_packages.find((p) => p.id === initPkg.id);
+    if (existing) {
+      existing.imageUrl = initPkg.imageUrl;
+      existing.gallery = initPkg.gallery;
+    }
+  }
 }
 
 if (!globalThis.__wanderlust_bookings) {
@@ -24,10 +30,16 @@ if (!globalThis.__wanderlust_user) {
 
 export const DataService = {
   getPackages(): TravelPackage[] {
-    return globalThis.__wanderlust_packages!;
+    if (!globalThis.__wanderlust_packages || globalThis.__wanderlust_packages.length < initialPackages.length) {
+      globalThis.__wanderlust_packages = [...initialPackages];
+    }
+    return globalThis.__wanderlust_packages;
   },
   getPackageById(id: string): TravelPackage | undefined {
-    return globalThis.__wanderlust_packages!.find((p) => p.id === id);
+    if (!globalThis.__wanderlust_packages || globalThis.__wanderlust_packages.length < initialPackages.length) {
+      globalThis.__wanderlust_packages = [...initialPackages];
+    }
+    return globalThis.__wanderlust_packages.find((p) => p.id === id);
   },
   addPackage(pkg: Omit<TravelPackage, "id">): TravelPackage {
     const newPkg: TravelPackage = {
@@ -52,8 +64,9 @@ export const DataService = {
     return globalThis.__wanderlust_packages.length < initialLen;
   },
 
-  getBookings(): Booking[] {
-    return globalThis.__wanderlust_bookings!;
+  getBookings(userId?: string): Booking[] {
+    if (!userId) return globalThis.__wanderlust_bookings!;
+    return globalThis.__wanderlust_bookings!.filter((b) => b.userId === userId);
   },
   addBooking(booking: Omit<Booking, "id" | "bookingCode" | "createdAt">): Booking {
     const count = globalThis.__wanderlust_bookings!.length + 1;

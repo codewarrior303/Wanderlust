@@ -26,6 +26,8 @@ import {
 import { TravelPackage } from "@/lib/types";
 import { Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { COUNTRIES } from "@/lib/countries";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const editSchema = z.object({
   title: z.string().min(2, "Package name is required"),
@@ -137,7 +139,24 @@ export function EditPackageModal({
               <Label htmlFor="edit-country" className="mb-1.5 block">
                 Country
               </Label>
-              <Input id="edit-country" {...register("country")} />
+              <Controller
+                name="country"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="edit-country" className="h-12 rounded-xl text-sm font-normal">
+                      <SelectValue placeholder="Select Country..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {COUNTRIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.country && (
                 <p className="mt-1 text-xs text-red-500">
                   {errors.country.message}
@@ -231,10 +250,17 @@ export function EditPackageModal({
               <Label htmlFor="edit-date" className="mb-1.5 block">
                 Departure Date
               </Label>
-              <Input
-                id="edit-date"
-                placeholder="05/15/2026"
-                {...register("departureDate")}
+              <Controller
+                name="departureDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    id="edit-date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select departure date from calendar..."
+                  />
+                )}
               />
               {errors.departureDate && (
                 <p className="mt-1 text-xs text-red-500">

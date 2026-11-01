@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TravelPackage } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -23,14 +24,28 @@ export function DestinationCard({
   onDelete,
   showAdminActions = false,
 }: DestinationCardProps) {
+  const router = useRouter();
+
+  const [imgSrc, setImgSrc] = React.useState(pkg.imageUrl || "/images/bali.webp");
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a")) return;
+    router.push(`/destinations/${pkg.id}`);
+  };
+
   return (
-    <div className="group flex flex-col rounded-3xl glass-card p-4 transition-all duration-300">
+    <div
+      onClick={handleCardClick}
+      className="group flex flex-col rounded-3xl glass-card p-4 transition-all duration-300 cursor-pointer hover:shadow-xl hover:border-[#15A1BF]/40"
+    >
       {/* Image Container with Rating Pill */}
       <div className="relative aspect-[16/10] sm:h-[230px] w-full overflow-hidden rounded-2xl bg-neutral-100">
         <Image
-          src={pkg.imageUrl}
+          src={imgSrc}
           alt={pkg.title}
           fill
+          onError={() => setImgSrc("/images/bali.webp")}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />

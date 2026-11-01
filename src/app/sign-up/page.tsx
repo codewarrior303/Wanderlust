@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
+import { Mail, Lock, User as UserIcon, Loader2, Eye, EyeOff } from "lucide-react";
 import { GoogleIcon } from "@/components/ui/google-icon";
 import { LegalModal } from "@/components/auth/legal-modal";
 
@@ -22,7 +22,7 @@ const signUpSchema = z
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm password is required"),
     terms: z.boolean().refine((val) => val === true, {
-      message: "You must accept the terms of service",
+      message: "You must accept the Terms of Service & Privacy Policy",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -37,10 +37,14 @@ export default function SignUpPage() {
   const { signUp, signInWithGoogle, isLoading } = useAuth();
   const [authError, setAuthError] = useState("");
   const [legalDoc, setLegalDoc] = useState<"terms" | "privacy" | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
@@ -55,6 +59,10 @@ export default function SignUpPage() {
 
   const onSubmit = async (values: SignUpValues) => {
     setAuthError("");
+    if (!values.terms) {
+      setAuthError("Please agree to the Terms of Service & Privacy Policy before creating your account.");
+      return;
+    }
     const success = await signUp(values.name, values.email, values.password);
     if (success) {
       router.push("/destinations");
@@ -64,6 +72,7 @@ export default function SignUpPage() {
   };
 
   const handleGoogle = async () => {
+    setValue("terms", true, { shouldValidate: true });
     const success = await signInWithGoogle();
     if (success) {
       router.push("/destinations");
@@ -137,11 +146,19 @@ export default function SignUpPage() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6C696D]" />
                 <Input
                   id="page-signup-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  className="pl-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
+                  className="pl-11 pr-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
                   {...register("password")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
@@ -156,11 +173,19 @@ export default function SignUpPage() {
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6C696D]" />
                 <Input
                   id="page-signup-confirm-password"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className="pl-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
+                  className="pl-11 pr-11 h-12 rounded-xl bg-[#F8FAFC] dark:bg-neutral-900/60 border-[#EEEEEE] dark:border-[#26262A] text-sm"
                   {...register("confirmPassword")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-[#6C696D] hover:text-[#15A1BF] transition-colors cursor-pointer"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.confirmPassword && (
                 <p className="mt-1 text-xs text-red-500">
@@ -170,7 +195,14 @@ export default function SignUpPage() {
             </div>
 
             <div className="flex items-start gap-2.5 pt-1 text-xs text-[#6C696D] dark:text-[#B6B6B6]">
-              <Checkbox id="page-signup-terms" {...register("terms")} className="mt-0.5" />
+              <Checkbox
+                id="page-signup-terms"
+                checked={watch("terms")}
+                onCheckedChange={(checked) =>
+                  setValue("terms", checked === true, { shouldValidate: true })
+                }
+                className="mt-0.5"
+              />
               <label
                 htmlFor="page-signup-terms"
                 className="leading-snug select-none cursor-pointer"
