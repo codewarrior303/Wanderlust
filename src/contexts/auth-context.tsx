@@ -56,10 +56,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Simulate Better Auth call
       await new Promise((resolve) => setTimeout(resolve, 600));
+      const formattedName =
+        email === initialUserProfile.email
+          ? initialUserProfile.name
+          : email
+          ? email
+              .split("@")[0]
+              .split(/[._-]/)
+              .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+              .join(" ")
+          : initialUserProfile.name;
+
       const loggedUser: UserProfile = {
         ...initialUserProfile,
         email: email || initialUserProfile.email,
-        name: email ? email.split("@")[0] : initialUserProfile.name,
+        name: formattedName,
       };
       setUser(loggedUser);
       localStorage.setItem("wanderlust_auth_user", JSON.stringify(loggedUser));

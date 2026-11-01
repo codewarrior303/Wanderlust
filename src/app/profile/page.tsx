@@ -124,7 +124,7 @@ export default function ProfilePage() {
                 <div className="relative h-36 w-36 overflow-hidden rounded-full ring-4 ring-[#15A1BF]/20 shadow-md">
                   <Image
                     src={user?.avatar || avatar}
-                    alt={user?.name || "Sarah Mitchell"}
+                    alt="User profile avatar"
                     fill
                     sizes="144px"
                     className="object-cover"

@@ -79,13 +79,13 @@ export function Navbar() {
                     {user.avatar ? (
                       <Image
                         src={user.avatar}
-                        alt={user.name}
+                        alt="User avatar"
                         fill
                         sizes="36px"
                         className="object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-tr from-[#15A1BF] to-[#2cd5f8] text-white font-bold text-xs uppercase">
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-tr from-[#15A1BF] to-[#2cd5f8] text-white font-bold text-xs uppercase" suppressHydrationWarning>
                         {user.name.charAt(0)}
                       </div>
                     )}
@@ -99,22 +99,22 @@ export function Navbar() {
                     {user.avatar ? (
                       <Image
                         src={user.avatar}
-                        alt={user.name}
+                        alt="User avatar"
                         fill
                         sizes="44px"
                         className="object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-[#15A1BF] text-white font-bold text-sm">
+                      <div className="flex h-full w-full items-center justify-center bg-[#15A1BF] text-white font-bold text-sm" suppressHydrationWarning>
                         {user.name.charAt(0)}
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col overflow-hidden text-left min-w-0">
-                    <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                    <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate" suppressHydrationWarning>
                       {user.name}
                     </span>
-                    <span className="text-xs text-[#6C696D] dark:text-[#B6B6B6] truncate">
+                    <span className="text-xs text-[#6C696D] dark:text-[#B6B6B6] truncate" suppressHydrationWarning>
                       {user.email}
                     </span>
                   </div>
@@ -211,18 +211,18 @@ export function Navbar() {
                       {user.avatar ? (
                         <Image
                           src={user.avatar}
-                          alt={user.name}
+                          alt="User avatar"
                           fill
                           sizes="32px"
                           className="object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-[#15A1BF] text-white font-bold text-xs">
+                        <div className="flex h-full w-full items-center justify-center bg-[#15A1BF] text-white font-bold text-xs" suppressHydrationWarning>
                           {user.name.charAt(0)}
                         </div>
                       )}
                     </div>
-                    <span>{user.name}</span>
+                    <span suppressHydrationWarning>{user.name}</span>
                   </Link>
 
                   <Button
